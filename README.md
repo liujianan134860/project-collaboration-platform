@@ -1,19 +1,18 @@
-# 智能项目协同管理平台
+# Project Collaboration Platform
 
-一个面向 Java 后端实习求职的全栈后台作品集项目。项目围绕“项目协作、任务流转、文件记录、操作审计、接口文档和容器化部署”展开，重点展示 Spring Boot 后端分层设计、认证鉴权、统一响应、参数校验、异常处理和可演示交付能力。
+一个基于 Spring Boot 3 的项目协同管理后端，用于管理项目、任务、文件记录和操作日志。系统内置演示数据和轻量认证机制，适合快速启动、接口调试和二次扩展。
 
-> 当前仓库提供可直接运行的后端版本，内置演示数据和轻量 JWT 实现，便于面试官快速启动、登录和调用接口。代码结构保留 Repository/Service/Controller 边界，可平滑替换为 MySQL + MyBatis-Plus + Redis 的真实持久化实现。
+## 功能概览
 
-## 项目亮点
-
-- 登录认证：提供演示账号登录，签发 HMAC-SHA256 JWT，使用拦截器保护 `/api/**` 接口。
-- 权限模型：内置 `ADMIN`、`MANAGER`、`MEMBER` 三类角色，为后续按钮级权限和菜单渲染保留扩展点。
-- 项目管理：支持项目列表、项目创建、项目状态流转。
-- 任务协同：支持任务创建、条件筛选、负责人筛选、状态流转、优先级和截止时间。
-- 文件记录：模拟文件上传元数据校验，记录项目文件、上传人、大小和类型。
-- 操作审计：关键业务动作自动写入审计日志，支持按动作和操作人查询。
-- 仪表盘：聚合项目数、任务数、任务状态分布和近期操作日志数量。
-- 工程化：统一响应、全局异常处理、参数校验、Swagger/OpenAPI、Dockerfile、Docker Compose、Nginx 反向代理配置。
+- 认证鉴权：演示账号登录、JWT 签发、接口鉴权拦截
+- 用户角色：内置 `ADMIN`、`MANAGER`、`MEMBER` 三类角色
+- 项目管理：项目列表、项目创建、项目状态流转
+- 任务协同：任务创建、状态流转、负责人筛选、优先级、截止时间
+- 文件记录：记录项目文件元数据、上传人、文件大小和类型
+- 操作审计：记录项目、任务、文件等关键操作，支持条件查询
+- 仪表盘：聚合项目数量、任务数量、任务状态分布和操作日志数量
+- 接口文档：集成 Swagger/OpenAPI
+- 容器化：提供 Dockerfile、Docker Compose 和 Nginx 反向代理配置
 
 ## 技术栈
 
@@ -25,6 +24,26 @@
 - JWT / HMAC-SHA256
 - Docker / Docker Compose
 - MySQL、Redis、Nginx 容器编排示例
+
+## 架构说明
+
+项目按业务边界拆分模块：
+
+```text
+src/main/java/com/liujianan/collab
+├── auth        # 登录认证
+├── audit       # 操作日志
+├── common      # 统一响应、异常处理
+├── config      # Web 配置与鉴权拦截器
+├── dashboard   # 仪表盘汇总
+├── file        # 文件记录
+├── project     # 项目管理
+├── security    # JWT、当前用户上下文
+├── task        # 任务协同
+└── user        # 用户与角色
+```
+
+当前版本使用内存 Repository 保存演示数据，便于快速启动和接口验证。Repository、Service、Controller 分层边界保持清晰，可替换为 MySQL、MyBatis-Plus、Redis 等持久化实现。
 
 ## 快速启动
 
@@ -45,9 +64,9 @@ mvn spring-boot:run
 | 项目负责人 | `manager` | `manager123` |
 | 成员 | `member` | `member123` |
 
-## 接口示例
+## API 示例
 
-### 登录获取 Token
+### 登录
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
@@ -57,11 +76,11 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 将返回的 `token` 放入后续请求头：
 
-```bash
+```text
 Authorization: Bearer <token>
 ```
 
-### 查询仪表盘
+### 仪表盘汇总
 
 ```bash
 curl http://localhost:8080/api/dashboard/summary \
@@ -74,7 +93,7 @@ curl http://localhost:8080/api/dashboard/summary \
 curl -X POST http://localhost:8080/api/projects \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"简历投递后台\",\"description\":\"管理项目、任务和审计日志\"}"
+  -d "{\"name\":\"协同管理系统\",\"description\":\"管理项目、任务和审计日志\"}"
 ```
 
 ### 创建任务
@@ -93,7 +112,7 @@ curl "http://localhost:8080/api/tasks?projectId=1&status=REVIEW" \
   -H "Authorization: Bearer <token>"
 ```
 
-### 上传文件记录
+### 记录文件
 
 ```bash
 curl -X POST http://localhost:8080/api/files \
@@ -122,22 +141,10 @@ Compose 中包含：
 - Redis 7
 - Nginx 反向代理
 
-## 目录结构
+## 后续扩展
 
-```text
-src/main/java/com/liujianan/collab
-├── auth        # 登录认证与演示账号
-├── audit       # 操作日志
-├── common      # 统一响应、异常
-├── config      # Web 拦截器配置
-├── dashboard   # 仪表盘汇总
-├── file        # 文件记录
-├── project     # 项目管理
-├── security    # JWT 与当前用户上下文
-├── task        # 任务协同
-└── user        # 用户与角色
-```
-
-## 面试说明
-
-这个项目适合用来展示第一份 Java 后端实习所需的完整后端链路：从需求拆分、接口设计、认证鉴权、业务模块、日志审计，到接口文档和容器化演示。相比只写 CRUD，它更强调后台管理系统常见的工程边界和可验证交付。
+- 接入 MySQL 与 MyBatis-Plus 持久化
+- 使用 Redis 管理登录态、热点数据缓存和防重复提交
+- 增加更细粒度的角色权限与菜单权限
+- 增加单元测试、接口测试和 CI
+- 补充前端管理页面
